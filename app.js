@@ -2,12 +2,14 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
+const { query } = require('./config/database');
 
 // Middleware
 app.use(bodyParser.json());
 
-app.use('/', (req, res) => {
-    res.status(200).send('Hello World!');
+app.use('/', async (req, res) => {
+    const data = await query('SELECT * FROM abc');
+    res.status(200).json(data);
 });
 
 const PORT = process.env.PORT || 3000;

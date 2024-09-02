@@ -1,0 +1,12 @@
+version: '3'
+services:
+  app:
+    build: .
+    environment:
+      DB_HOST: 65.1.148.56
+      DB_PORT: 5432
+      DB_NAME: abc_test
+      DB_USER: postgres
+      DB_PASS: postgres
+    ports:
+      - "3000:3000"
