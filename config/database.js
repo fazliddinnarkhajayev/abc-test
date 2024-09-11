@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
+const { DatabaseError } = require('../utils/errors.js');
 
 const pool = new Pool({
     host: process.env.DB_HOST || 'localhost',
@@ -16,10 +17,10 @@ async function query(queryText, ...params) {
     try {
         // Use the client for database operations
         const res = await client.query(queryText, params);
-        return res.rows;
+        return { success: res.rowCount > 0, data: res.rows };
     } catch (error) {
         console.error('Error during database operation:', error);
-        return [];  
+        throw new DatabaseError(error.message);
     } finally {
         // Automatically release the client back to the pool
         client.release();
