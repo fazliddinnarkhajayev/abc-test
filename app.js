@@ -2,15 +2,22 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
-const { query } = require('./config/database');
+require('dotenv').config();
 
-// Middleware
+const routes = require('./routes');
+
+// Middlewares
+const errorHandler = require('./middlewares/error-handler.js');
+const { authenticateToken } = require('./middlewares/auth.js');
+
 app.use(bodyParser.json());
+app.use(express.json());
 
-app.use('/', async (req, res) => {
-    const data = await query('SELECT * FROM abc');
-    res.status(200).json(data);
-});
+// Routes
+app.use('/api', authenticateToken, routes);
+
+// Use the error handler middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
