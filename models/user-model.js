@@ -52,10 +52,10 @@ exports.create = async (name, email, password) => {
 };
 
 // Update new user
-exports.update = async (fullName, email, uuid) => {
+exports.update = async (fullName, email, updateDate, uuid) => {
     try {
-        const query = 'UPDATE users SET full_name = $1, email = $2 WHERE uuid = $3';
-        const result = await pool.query(query, fullName, email, uuid);
+        const query = 'UPDATE users SET full_name = $1, email = $2, updated_at = $3 WHERE uuid = $4';
+        const result = await pool.query(query, fullName, email, updateDate, uuid);
         return result.success;
     } catch (error) {
         console.error('Error updating user:', error);

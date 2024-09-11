@@ -23,7 +23,7 @@ exports.update = async (req, res, next) => {
       throw new BadRequestError('User not found');
     }
 
-    const isUpdated = await userModel.update(fullName, email, uuid);
+    const isUpdated = await userModel.update(fullName, email, new Date(), uuid);
     if(!isUpdated) {
       throw new BadRequestError('Failed to update user');
     }
