@@ -1,7 +1,7 @@
 const { body } = require('express-validator');
 
 // Regular expression for Latin and Cyrillic letters in lowercase
-const fullNameRegex = /^[a-zа-яё]+$/i;
+const fullNameRegex = /^[a-zа-яё ]*$/;
 
 const registerValidation = [
   body('fullName')

@@ -15,11 +15,11 @@ exports.findOneByEmail = async (email) => {
 // Get user by uuid
 exports.findOneByUuid = async (uuid) => {
     try {
-        const query = 'SELECT uuid, full_name, email FROM users WHERE uuid = $1 LIMIT 1';
+        const query = 'SELECT uuid, full_name, email, is_verified as "isVerified" FROM users WHERE uuid = $1 LIMIT 1';
         const result = await pool.query(query, uuid);
         return result.success ? result.data[0] : null;
     } catch (error) {
-        console.error('Error finding user by email:', error);
+        console.error('Error finding user by uuid:', error);
         throw error;
     }
 };
@@ -51,7 +51,7 @@ exports.create = async (name, email, password) => {
     }
 };
 
-// Update new user
+// Update a user
 exports.update = async (fullName, email, updateDate, uuid) => {
     try {
         const query = 'UPDATE users SET full_name = $1, email = $2, updated_at = $3 WHERE uuid = $4';
@@ -63,14 +63,14 @@ exports.update = async (fullName, email, updateDate, uuid) => {
     }
 };
 
-exports.setVerificationCodeWithExpDateTime = async (userId, code, dateTime) => {
+exports.setVerificationCodeWithExpDateTime = async (userUuid, code, dateTime) => {
     try {
         const query = `
             UPDATE users 
             SET verification_code_exp_date_time = $1, verification_code = $2
             WHERE uuid = $3
         `;
-       const result = await pool.query(query, dateTime, code, userId);
+       const result = await pool.query(query, dateTime, code, userUuid);
        return result.success;
     } catch (error) {
         console.error('Error setting verification code expiration:', error);
@@ -86,21 +86,6 @@ exports.verifyUserEmail = async (email) => {
         return result.success;
     } catch (error) {
         console.error('Error verifying user email:', error);
-        throw error;
-    }
-};
-
-// Delete unverified users older than 1 day
-exports.deleteUnverifiedUsers = async () => {
-    try {
-        const query = `
-            DELETE FROM users 
-            WHERE is_verified = false 
-            AND created_at < NOW() - INTERVAL '1 DAY'
-        `;
-        await pool.query(query);
-    } catch (error) {
-        console.error('Error deleting unverified users:', error);
         throw error;
     }
 };
