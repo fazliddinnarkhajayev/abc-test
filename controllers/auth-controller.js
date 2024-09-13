@@ -28,7 +28,7 @@ exports.register = async (req, res, next) => {
 
     res.status(201).json({
       status: 'success',
-      message: 'User registered. Please check your email for verification.',
+      message: 'User registered.',
     });
   } catch (error) {
     next(error); // Pass the error to the error handler

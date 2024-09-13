@@ -1,11 +1,13 @@
 const userModel = require('../models/user-model.js');
 const commentModel = require('../models/comment-model.js');
+const publicationModel = require('../models/publication-model.js');
 const { BadRequestError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
 
 
 exports.createComment = async (req, res, next) => {
   const errors = validationResult(req);
+
   if (!errors.isEmpty()) {
     return res.status(400).json({
       status: 'error',
@@ -14,7 +16,7 @@ exports.createComment = async (req, res, next) => {
   }
   const { content } = req.body;
   const userUuid = req.user.userUuid;
-  const postUuid = req.params.postUuid;
+  const publicationUUid = req.params.publicationUUid;
 
   try {
 
@@ -23,11 +25,11 @@ exports.createComment = async (req, res, next) => {
       throw new BadRequestError('unverifiedUserCannotCreateComment');
     }
 
-    const post = await postModel.findOneByUuid(postUuid);
-    if (!post) {
+    const publication = await publicationModel.findOneByUuid(publicationUUid);
+    if (!publication) {
       throw new BadRequestError('Post not found');
     }
-    const isCreated = await commentModel.createComment(content, userUuid, postUuid);
+    const isCreated = await commentModel.createComment(content, userUuid, publicationUUid);
     if(!isCreated) {
       throw new BadRequestError('Failed to create comment');
     }
@@ -42,11 +44,11 @@ exports.createComment = async (req, res, next) => {
 
 exports.deleteComment = async (req, res, next) => {
   const commentUuid = req.params.commentUuid;
-  const postUuid = req.params.postUuid;
+  const publicationUUid = req.params.publicationUUid;
 
   try {
     // check if desired comment exists
-    const comment = await commentModel.commentExists(commentUuid, postUuid);
+    const comment = await commentModel.commentExists(commentUuid, publicationUUid);
     if (!comment) {
       throw new BadRequestError('Comment not found');
     }
