@@ -6,6 +6,9 @@ require('dotenv').config();
 
 const routes = require('./routes');
 
+// cron-jobs
+require('./cron/cron-job.js');
+
 // Middlewares
 const errorHandler = require('./middlewares/error-handler.js');
 const { authenticateToken } = require('./middlewares/auth.js');
