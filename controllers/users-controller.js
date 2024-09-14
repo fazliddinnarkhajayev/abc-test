@@ -123,16 +123,21 @@ exports.verifyEmail = async (req, res, next) => {
 
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await userModel.findAll();
+    let { pageSize, pageIndex } = req.query;
+    pageSize = +pageSize || 10;
+    pageIndex = +pageIndex || 0;
+    
+    const users = await userModel.findAll(pageSize, pageIndex);
 
-    if(!users.length) {
+    if(!users.success) {
       throw new NoContentError('No users found');
     }
     
     res.status(200).json({
       status: 'success',
-      data: users,
+      data: { content: users.data, totalItemsCount: users.totalCount, pageSize, pageIndex },
     });
+
   } catch (error) {
     next(error); // Pass the error to the error handler
   }

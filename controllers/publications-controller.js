@@ -131,15 +131,45 @@ exports.createLike = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
+    let { pageSize, pageIndex } = req.query;
+    pageSize = +pageSize || 10;
+    pageIndex = +pageIndex || 0;
 
-    const publications = await publicationModel.findAll();
-    if(!publications.length) {
+    const publications = await publicationModel.findAll(pageSize, pageIndex);
+    if(!publications.success) {
       throw new NoContentError('No publications found');
     }
 
     res.status(200).json({
       status: 'success',
-      data: publications,
+      data: { content: publications.data, totalItemsCount: publications.totalCount, pageSize, pageIndex }
+    });
+  } catch (error) {
+    next(error); // Pass the error to the error handler
+  }
+}
+
+exports.getOne = async (req, res, next) => {
+  try {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 'error',
+        errors: errors.array(),
+      });
+    }
+
+    let { uuid } = req.query;
+
+    const publication = await publicationModel.findOne(uuid);
+    if(!publication) {
+      throw new NoContentError('No publication found');
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: publication
     });
   } catch (error) {
     next(error); // Pass the error to the error handler

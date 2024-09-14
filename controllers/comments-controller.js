@@ -1,7 +1,7 @@
 const userModel = require('../models/user-model.js');
 const commentModel = require('../models/comment-model.js');
 const publicationModel = require('../models/publication-model.js');
-const { BadRequestError } = require('../utils/errors.js');
+const { BadRequestError, NoContentError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
 
 
@@ -65,3 +65,23 @@ exports.deleteComment = async (req, res, next) => {
     next(error); // Pass the error to the error handler
   }
 };
+
+exports.getAll = async (req, res, next) => {
+  try {
+    let { pageSize, pageIndex } = req.query;
+    pageSize = +pageSize || 10;
+    pageIndex = +pageIndex || 0;
+
+    const comments = await commentModel.findAll(pageSize, pageIndex);
+    if(!comments.success) {
+      throw new NoContentError('No comments found');
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: { content: comments.data, totalItemsCount: comments.totalCount, pageSize, pageIndex }
+    });
+  } catch (error) {
+    next(error); // Pass the error to the error handler
+  }
+}

@@ -78,7 +78,6 @@ exports.setVerificationCodeWithExpDateTime = async (userUuid, code, dateTime) =>
     }
 };
 
-
 exports.verifyUserEmail = async (email) => {
     try {
         const query = 'UPDATE users SET is_verified = true WHERE email = $1';
@@ -90,10 +89,9 @@ exports.verifyUserEmail = async (email) => {
     }
 };
 
-exports.findAll = async () => {
-    try {
+exports.findAll = async (pageSize, pageIndex) => {
         const query = `SELECT
-                         u.email as "username",
+                        u.email as "username",
                         COALESCE(
                             json_agg(
                               json_build_object(
@@ -103,13 +101,19 @@ exports.findAll = async () => {
                                 'Likes', COALESCE((SELECT ARRAY_AGG(l.user_uuid) FROM likes l WHERE l.publication_uuid = p.uuid), '{}')
                             )
                         ) FILTER (WHERE p.uuid IS NOT NULL), '[]') as "articles"
-                     
                         FROM users u
-                      LEFT JOIN publications p ON u.uuid = p.user_uuid
-                      GROUP BY u.email;
-                      `;
-        const result = await pool.query(query);
-        return result.success ? result.data : [];
+                        LEFT JOIN publications p ON u.uuid = p.user_uuid
+                        GROUP BY u.email
+                        LIMIT $1 OFFSET $2
+                        `;
+        const countQuery = 'SELECT COUNT(uuid) FROM users';
+        
+    try {
+        const result = await pool.query(query, pageSize, pageIndex * pageSize);
+        const countResult = await pool.query(countQuery);
+
+        const totalCount = +countResult.data[0]?.count || 0;
+        return { success: result.success, data: result.data, totalCount };
     } catch (error) {
         console.error('Error finding all users:', error);
         throw error;

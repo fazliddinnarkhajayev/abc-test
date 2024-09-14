@@ -1,4 +1,4 @@
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 
 // Regular expression for Latin and Cyrillic letters in lowercase
 const titleRegex = /^[a-zа-яё]+$/i;
@@ -46,11 +46,8 @@ const updateValidation = [
      .withMessage('Uuid must be a valid UUID')
   ];
 
-  const commentPostValidation = [
-    body('content')
-      .notEmpty()
-      .withMessage('Content is required'),
-    param('uuid')
+  const getOnePublicationValidation = [
+    query('uuid')
       .notEmpty()
       .withMessage('Uuid is required')
       .isUUID()
@@ -61,5 +58,5 @@ module.exports = {
   createValidation,
   updateValidation,
   uuidParamValidation,
-  commentPostValidation
+  getOnePublicationValidation
 };

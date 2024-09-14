@@ -43,3 +43,29 @@ exports.deleteComment = async (uuid) => {
         throw error;
     }
 }
+
+exports.findAll = async (pageSize, pageIndex) => {
+    const query = `SELECT
+                    c.uuid,
+                    c.content,
+                    c.created_at as "createdAt",
+                    u.email as "creatdBy",
+                    p.uuid as "publicationUuid"
+                    FROM comments c
+                    LEFT JOIN users u ON c.user_uuid = u.uuid
+                    LEFT JOIN publications p ON c.publication_uuid = p.uuid
+                    LIMIT $1 OFFSET $2
+                    `;
+    const countQuery = 'SELECT COUNT(uuid) FROM comments';
+    
+try {
+    const result = await pool.query(query, pageSize, pageIndex * pageSize);
+    const countResult = await pool.query(countQuery);
+
+    const totalCount = +countResult.data[0]?.count || 0;
+    return { success: result.success, data: result.data, totalCount };
+} catch (error) {
+    console.error('Error finding all comments`:', error);
+    throw error;
+}
+}
