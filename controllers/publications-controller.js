@@ -1,6 +1,6 @@
 const userModel = require('../models/user-model.js');
-const postModel = require('../models/post-model.js');
-const { BadRequestError } = require('../utils/errors.js');
+const publicationModel = require('../models/publication-model.js');
+const { BadRequestError, NoContentError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
 
 
@@ -23,9 +23,9 @@ exports.create = async (req, res, next) => {
       throw new BadRequestError('unverifiedUserCannotCreatePost');
     }
 
-    const isCreated = await postModel.create(title, content, userUuid);
+    const isCreated = await publicationModel.create(title, content, userUuid);
     if(!isCreated) {
-      throw new BadRequestError('Failed to create post');
+      throw new BadRequestError('Failed to create publication');
     }
 
     res.status(201).json({
@@ -53,14 +53,14 @@ exports.update = async (req, res, next) => {
 
   try {
 
-     const postExists = await postModel.postExists(uuid, userUuid);
+     const postExists = await publicationModel.postExists(uuid, userUuid);
     if (!postExists) {
       throw new BadRequestError('Post not found');
     }
 
-    const isUpdated = await postModel.update(title, content, new Date(), uuid, userUuid);
+    const isUpdated = await publicationModel.update(title, content, new Date(), uuid, userUuid);
     if(!isUpdated) {
-      throw new BadRequestError('Failed to update post');
+      throw new BadRequestError('Failed to update publication');
     }
 
     res.status(200).json({
@@ -78,14 +78,14 @@ exports.delete = async (req, res, next) => {
 
   try {
 
-    const postExists = await postModel.postExists(uuid, userUuid);
+    const postExists = await publicationModel.postExists(uuid, userUuid);
     if (!postExists) {
       throw new BadRequestError('Post not found');
     }
 
-    const isDeleted = await postModel.delete(uuid, userUuid);
+    const isDeleted = await publicationModel.delete(uuid, userUuid);
     if(!isDeleted) {
-      throw new BadRequestError('Failed to delete post');
+      throw new BadRequestError('Failed to delete publication');
     }
 
     res.status(200).json({
@@ -102,23 +102,23 @@ exports.createLike = async (req, res, next) => {
   const userUuid = req.user.userUuid;
   try {
 
-    const post = await postModel.findOneByUuid(uuid);
-    if (!post) {
+    const publication = await publicationModel.findOneByUuid(uuid);
+    if (!publication) {
       throw new BadRequestError('Post not found');
     }
 
-    if(post.userUuid == userUuid) {
-      throw new BadRequestError('Cannot like your own post');
+    if(publication.userUuid == userUuid) {
+      throw new BadRequestError('Cannot like your own publication');
     }
 
-    const isAlreadyLiked = await postModel.isAlreadyLiked(uuid, userUuid);
+    const isAlreadyLiked = await publicationModel.isAlreadyLiked(uuid, userUuid);
     if(isAlreadyLiked) {
       throw new BadRequestError('Post already liked');
     }
 
-    const isLiked = await postModel.createLike(uuid, userUuid);
+    const isLiked = await publicationModel.createLike(uuid, userUuid);
     if(!isLiked) {
-      throw new BadRequestError('Failed to like post');
+      throw new BadRequestError('Failed to like publication');
     }
     res.status(200).json({
       status: 'success',
@@ -128,3 +128,50 @@ exports.createLike = async (req, res, next) => {
     next(error); // Pass the error to the error handler 
   }
 };
+
+exports.getAll = async (req, res, next) => {
+  try {
+    let { pageSize, pageIndex } = req.query;
+    pageSize = +pageSize || 10;
+    pageIndex = +pageIndex || 0;
+
+    const publications = await publicationModel.findAll(pageSize, pageIndex);
+    if(!publications.success) {
+      throw new NoContentError('No publications found');
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: { content: publications.data, totalItemsCount: publications.totalCount, pageSize, pageIndex }
+    });
+  } catch (error) {
+    next(error); // Pass the error to the error handler
+  }
+}
+
+exports.getOne = async (req, res, next) => {
+  try {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 'error',
+        errors: errors.array(),
+      });
+    }
+
+    let { uuid } = req.query;
+
+    const publication = await publicationModel.findOne(uuid);
+    if(!publication) {
+      throw new NoContentError('No publication found');
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: publication
+    });
+  } catch (error) {
+    next(error); // Pass the error to the error handler
+  }
+}

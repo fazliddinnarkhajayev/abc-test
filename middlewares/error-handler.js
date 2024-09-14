@@ -1,5 +1,5 @@
 // middleware/errorHandler.js
-const { BadRequestError, InternalServerError, DatabaseError } = require('../utils/errors');
+const { BadRequestError, InternalServerError, DatabaseError, NoContentError, NotFoundError } = require('../utils/errors');
 
 const errorHandler = (err, req, res, next) => {
   if (err instanceof BadRequestError) {
@@ -14,6 +14,18 @@ const errorHandler = (err, req, res, next) => {
     });
   } else if (err instanceof DatabaseError) {
     console.error('Database error:', err.message);
+    res.status(err.statusCode).json({
+        status: 'error',
+        message: err.message,
+    });
+  } else if (err instanceof NoContentError) {
+    console.error('No content:', err.message);
+    res.status(err.statusCode).json({
+        status: 'error',
+        message: err.message,
+    });
+  } else if (err instanceof NotFoundError) {
+    console.error('Not found:', err.message);
     res.status(err.statusCode).json({
         status: 'error',
         message: err.message,

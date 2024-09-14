@@ -25,12 +25,26 @@ class AppError extends Error {
     }
 }
 
+class NotFoundError extends AppError {
+  constructor(message) {
+    super(message, 404);
+  }
+}
+
+class NoContentError extends AppError {
+  constructor() {
+    super('No Content', 204);
+  }
+}
+
   
   // Add other custom errors as needed
   
   module.exports = {
     BadRequestError,
     InternalServerError,
-    DatabaseError
+    DatabaseError,
+    NotFoundError,
+    NoContentError
   };
   

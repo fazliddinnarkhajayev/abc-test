@@ -4,7 +4,7 @@ const { body, param } = require('express-validator');
     body('content')
       .notEmpty()
       .withMessage('Content is required'),
-    param('uuid')
+    param('publicationUUid')
       .notEmpty()
       .withMessage('Uuid is required')
       .isUUID()

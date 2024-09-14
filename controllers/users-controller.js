@@ -1,5 +1,5 @@
 const userModel = require('../models/user-model.js');
-const { BadRequestError } = require('../utils/errors.js');
+const { BadRequestError, NoContentError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
 const { generateVerificationCode, generateCodeVerificationExpDateTime, isCodeExpired } = require('../utils/helper.js');
 const { sendMail } = require('../services/mail.service.js');
@@ -99,8 +99,7 @@ exports.verifyEmail = async (req, res, next) => {
     if (!user) {
       throw new BadRequestError('User not found');
     }
-
-    if(user.verificationCode !== code) {
+    if(+user.verificationCode !== +code) {
       throw new BadRequestError('Invalid verification code');
     } 
     const isExpired = isCodeExpired(user.codeExpDateTime);
@@ -121,3 +120,25 @@ exports.verifyEmail = async (req, res, next) => {
     next(error); // Pass the error to the error handler
   }
 };
+
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    let { pageSize, pageIndex } = req.query;
+    pageSize = +pageSize || 10;
+    pageIndex = +pageIndex || 0;
+    
+    const users = await userModel.findAll(pageSize, pageIndex);
+
+    if(!users.success) {
+      throw new NoContentError('No users found');
+    }
+    
+    res.status(200).json({
+      status: 'success',
+      data: { content: users.data, totalItemsCount: users.totalCount, pageSize, pageIndex },
+    });
+
+  } catch (error) {
+    next(error); // Pass the error to the error handler
+  }
+}
