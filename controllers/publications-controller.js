@@ -1,8 +1,8 @@
 const userModel = require('../models/user-model.js');
 const publicationModel = require('../models/publication-model.js');
-const { BadRequestError, NoContentError } = require('../utils/errors.js');
+const { BadRequestError, NoContentError, InternalServerError, NotFoundError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
-
+const { ErrorMessages } = require('../utils/error-messages.js');
 
 exports.create = async (req, res, next) => {
 
@@ -20,12 +20,12 @@ exports.create = async (req, res, next) => {
   try {
     const user = await userModel.findOneByUuid(userUuid);
     if(!user.isVerified) { 
-      throw new BadRequestError('unverifiedUserCannotCreatePost');
+      throw new BadRequestError(ErrorMessages.UnverifiedUser);
     }
 
     const isCreated = await publicationModel.create(title, content, userUuid);
     if(!isCreated) {
-      throw new BadRequestError('Failed to create publication');
+      throw new InternalServerError(ErrorMessages.FailedToCreate);
     }
 
     res.status(201).json({
@@ -55,12 +55,12 @@ exports.update = async (req, res, next) => {
 
      const postExists = await publicationModel.postExists(uuid, userUuid);
     if (!postExists) {
-      throw new BadRequestError('Post not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
 
     const isUpdated = await publicationModel.update(title, content, new Date(), uuid, userUuid);
     if(!isUpdated) {
-      throw new BadRequestError('Failed to update publication');
+      throw new InternalServerError(ErrorMessages.FailedToUpdate);
     }
 
     res.status(200).json({
@@ -80,12 +80,12 @@ exports.delete = async (req, res, next) => {
 
     const postExists = await publicationModel.postExists(uuid, userUuid);
     if (!postExists) {
-      throw new BadRequestError('Post not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
 
     const isDeleted = await publicationModel.delete(uuid, userUuid);
     if(!isDeleted) {
-      throw new BadRequestError('Failed to delete publication');
+      throw new InternalServerError(ErrorMessages.FailedToDelete);
     }
 
     res.status(200).json({
@@ -104,21 +104,21 @@ exports.createLike = async (req, res, next) => {
 
     const publication = await publicationModel.findOneByUuid(uuid);
     if (!publication) {
-      throw new BadRequestError('Post not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
 
     if(publication.userUuid == userUuid) {
-      throw new BadRequestError('Cannot like your own publication');
+      throw new BadRequestError(ErrorMessages.SelfLike);
     }
 
     const isAlreadyLiked = await publicationModel.isAlreadyLiked(uuid, userUuid);
     if(isAlreadyLiked) {
-      throw new BadRequestError('Post already liked');
+      throw new BadRequestError(ErrorMessages.AlreadyLiked);
     }
 
     const isLiked = await publicationModel.createLike(uuid, userUuid);
     if(!isLiked) {
-      throw new BadRequestError('Failed to like publication');
+      throw new InternalServerError(ErrorMessages.FailedToLike);
     }
     res.status(200).json({
       status: 'success',
@@ -137,7 +137,7 @@ exports.getAll = async (req, res, next) => {
 
     const publications = await publicationModel.findAll(pageSize, pageIndex);
     if(!publications.success) {
-      throw new NoContentError('No publications found');
+      throw new NoContentError(ErrorMessages.NoContent);
     }
 
     res.status(200).json({
@@ -164,7 +164,7 @@ exports.getOne = async (req, res, next) => {
 
     const publication = await publicationModel.findOne(uuid);
     if(!publication) {
-      throw new NoContentError('No publication found');
+      throw new NoContentError(ErrorMessages.NoContent);
     }
 
     res.status(200).json({

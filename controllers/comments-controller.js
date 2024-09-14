@@ -1,8 +1,9 @@
 const userModel = require('../models/user-model.js');
 const commentModel = require('../models/comment-model.js');
 const publicationModel = require('../models/publication-model.js');
-const { BadRequestError, NoContentError } = require('../utils/errors.js');
+const { BadRequestError, NoContentError, NotFoundError, InternalServerError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
+const { ErrorMessages } = require('../utils/error-messages.js');
 
 
 exports.createComment = async (req, res, next) => {
@@ -22,16 +23,16 @@ exports.createComment = async (req, res, next) => {
 
     const user = await userModel.findOneByUuid(userUuid);
     if(!user.isVerified) {
-      throw new BadRequestError('unverifiedUserCannotCreateComment');
+      throw new BadRequestError(ErrorMessages.UnverifiedUser);
     }
 
     const publication = await publicationModel.findOneByUuid(publicationUUid);
     if (!publication) {
-      throw new BadRequestError('Post not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
     const isCreated = await commentModel.createComment(content, userUuid, publicationUUid);
     if(!isCreated) {
-      throw new BadRequestError('Failed to create comment');
+      throw new InternalServerError(ErrorMessages.FailedToCreate);
     }
     res.status(201).json({
       status: 'success',
@@ -50,12 +51,12 @@ exports.deleteComment = async (req, res, next) => {
     // check if desired comment exists
     const comment = await commentModel.commentExists(commentUuid, publicationUUid);
     if (!comment) {
-      throw new BadRequestError('Comment not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
 
     const isDeleted = await commentModel.deleteComment(commentUuid);
     if(!isDeleted) {
-      throw new BadRequestError('Failed to delete comment');
+      throw new InternalServerError(ErrorMessages.FailedToDelete);
     }
     res.status(200).json({
       status: 'success',
@@ -74,7 +75,7 @@ exports.getAll = async (req, res, next) => {
 
     const comments = await commentModel.findAll(pageSize, pageIndex);
     if(!comments.success) {
-      throw new NoContentError('No comments found');
+      throw new NoContentError(ErrorMessages.NoContent);
     }
 
     res.status(200).json({

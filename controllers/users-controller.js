@@ -1,8 +1,9 @@
 const userModel = require('../models/user-model.js');
-const { BadRequestError, NoContentError } = require('../utils/errors.js');
+const { BadRequestError, NoContentError, NotFoundError, InternalServerError } = require('../utils/errors.js');
 const { validationResult } = require('express-validator');
 const { generateVerificationCode, generateCodeVerificationExpDateTime, isCodeExpired } = require('../utils/helper.js');
 const { sendMail } = require('../services/mail.service.js');
+const { ErrorMessages } = require('../utils/error-messages.js');
 
 exports.update = async (req, res, next) => {
 
@@ -20,12 +21,12 @@ exports.update = async (req, res, next) => {
   try {
     const user = await userModel.findOneByUuid(uuid);
     if (!user) {
-      throw new BadRequestError('User not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
 
     const isUpdated = await userModel.update(fullName, email, new Date(), uuid);
     if(!isUpdated) {
-      throw new BadRequestError('Failed to update user');
+      throw new InternalServerError(ErrorMessages.FailedToUpdate);
     }
 
     res.status(200).json({
@@ -53,11 +54,11 @@ exports.sendVerificationCode = async (req, res, next) => {
        
     const user = await userModel.findOneByEmail(email);
     if (!user) {
-      throw new BadRequestError('User not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
 
     if (user.isVerified) {
-      throw new BadRequestError('User already verified');
+      throw new BadRequestError(ErrorMessages.AlreadyVerified);
     }
 
     const verificationCode = generateVerificationCode();
@@ -66,7 +67,7 @@ exports.sendVerificationCode = async (req, res, next) => {
     const isSet = await userModel.setVerificationCodeWithExpDateTime(user?.uuid, verificationCode, expDateTime);
 
     if (!isSet) {
-      throw new BadRequestError('Failed to send verification code');
+      throw new InternalServerError(ErrorMessages.FaliedToSendVerificationCode);
     }
 
     // Send verification code to user's email
@@ -97,19 +98,19 @@ exports.verifyEmail = async (req, res, next) => {
 
     const user = await userModel.findOneByEmail(email);
     if (!user) {
-      throw new BadRequestError('User not found');
+      throw new NotFoundError(ErrorMessages.NotFound);
     }
     if(+user.verificationCode !== +code) {
-      throw new BadRequestError('Invalid verification code');
+      throw new BadRequestError(ErrorMessages.InvalidVerificationCode);
     } 
     const isExpired = isCodeExpired(user.codeExpDateTime);
     if(isExpired) {
-      throw new BadRequestError('Verification code expired');
+      throw new BadRequestError(ErrorMessages.VerificationCodeExpired);
     }
 
     const isVerified = await userModel.verifyUserEmail(email);
     if (!isVerified) {
-      throw new BadRequestError('Failed to verify email');
+      throw new InternalServerError(ErrorMessages.FailedToVerifyEmail);
     }
 
     res.status(200).json({
@@ -130,7 +131,7 @@ exports.getAllUsers = async (req, res, next) => {
     const users = await userModel.findAll(pageSize, pageIndex);
 
     if(!users.success) {
-      throw new NoContentError('No users found');
+      throw new NoContentError(ErrorMessages.NoContent);
     }
     
     res.status(200).json({
